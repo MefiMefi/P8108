@@ -1,0 +1,167 @@
+---
+title: "P8108 Homework 2"
+author: "Ryan Wei, rw2844"
+date: "2022-09-24"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r pkg, include=FALSE}
+library(stats)
+library(tidyverse)
+```
+
+## Problem 1
+
+> For discrete survival time, show $f(t_j) = h_j \prod\limits_{i\le j-1}(1-h_i)$
+
+**Proof**
+
+For discrete survival time, we have
+$$
+\begin{aligned}
+h_j &= h(t_j)\\
+& =\frac{P(T = t_j\ \cap\ T\ge t_j)}{P(T\ge t_j)}\\
+& = \frac{P(T = t_j)}{P(T\ge t_j)}\\
+& = \frac{P(T = t_j)}{P(T> t_{j-1})}\\
+& = \frac{f(t_j)}{S( t_{j-1})}\\
+& = \frac{f(t_j)}{P(T> t_{j-1}\mid T\ge t_{j-1})\times P(T> t_{j-2}\mid T\ge t_{j-2})\times\ldots\times P(T> t_1\mid T\ge t_1)}\\
+& = \frac{f(t_j)}{(1-h_{j-1})\times (1-h_{j-2})\times \ldots \times(1-h_{1})}\\
+& = \frac{f(t_j)}{\prod\limits_{i\le j-1}(1-h_i)}
+\end{aligned}
+$$
+
+By rearranging the equation, we can get
+$$f(t_j) = h_j\prod\limits_{i\le j-1}(1-h_i)$$
+
+\hfill $\square$
+
+## Problem 2
+
+> Show that if $S_1(t) = \{S_0(t)\}^{\lambda}$, then $h_1(t) = \lambda h_0(t)$
+
+**Proof**
+
+Since in continuous survival time case, we have 
+
+$$h(t) = -\frac{d\log S(t)}{dt}$$
+Hence,
+$$
+\begin{aligned}
+h_0(t) & = -\frac{d\log S_0(t)}{dt}\\
+h_1(t) & = - \frac{d\log S_1(t)}{dt} = - \frac{d\log \{S_0(t)\}^{\lambda}}{dt} =- \lambda\frac{d\log S_0(t)}{dt} = \lambda h_0(t) \\
+\end{aligned}
+$$
+\hfill $\square$
+
+
+## Problem 3
+
+> Show that the survival function $S(t) = \exp(-H(t))$, where $H(t)$ is a cumulative hazard function
+
+By the definition,
+
+$$
+\begin{aligned}
+H(t) & = \int\limits_{0}^{t} h(x)dx\\
+& =  \int\limits_{0}^{t}-\frac{d\log S(x)}{dx}dx\\
+& = -\log S(t)
+\end{aligned}
+$$
+Hence, 
+
+$$ S(t) = \exp(-H(t))$$
+
+\hfill$\square$
+
+## Problem 4
+
+> In a two-arm randomized and controlled clinical trial, the median survival time in the control and new treatment arms are 9 months and 14 months, respectively. Assuming the survival time follows exponential distribution, what is the hazard rate for the control and new treatment arms? What is the risk reduction in the new treatment in comparison to the control arm?
+
+For exponential distributions,
+
+$$
+\begin{aligned}
+f(t) & = \lambda e ^{-\lambda t}\\
+S(t) & = P(T>t)\\
+& = 1-F(t)\\
+& = e^{-\lambda t} \\
+\lambda(t)& = \frac{f(t)}{S(t)}\\
+& = \lambda
+\end{aligned}
+$$
+
+Since the median survival time in the control(c) and new treatment(t) arms are 9 months and 14 months, respectively. That is,
+$$
+\begin{aligned}
+S(t_{cm}) & = 0.5 = e^{-\lambda_ct_{cm}} = e^{-9\lambda_c}\\
+S(t_{tm}) & = 0.5 = e^{-\lambda_tt_{tm}} = e^{-14\lambda_t}
+\end{aligned}
+$$
+Solving the equations above, we can get $\lambda_c = 0.077, \lambda_t = 0.050$, and the hazard ratio between control and new treatment arms is $\frac{\lambda_c}{\lambda_t} =  1.556$ or $\frac{\lambda_t}{\lambda_c} =   0.643$. So the risk reduction in the new treatment in comparison to the control arm is $35.7\%$
+
+## Problem 5
+
+> Plot $h(t)$ for log-normal, Gamma distributions with your choice of parameters
+
+1) For log-normal distribution $LN(\mu,\sigma^2)$, in this case, I choose $\mu = 4 ,\sigma = 2$
+
+For a log-normal distribution,
+$$
+\begin{aligned}
+S(t) & = 1-\Phi(\frac{\ln t - \mu}{\sigma})\\
+f(t) & = \frac{{\exp(-(\frac{\ln t - \mu}{\sqrt 2\sigma})}^2)}{\sqrt{2\pi}t\sigma}\\
+h(t) & = \frac{f(t)}{S(t)}
+\end{aligned}
+$$
+Here, I create a function for the hazard function of log-normal distribution, and plot the hazard function with my parameters.
+
+```{r lognormal_hazard}
+hlognorm <- function(t, mu = 0, sd = 1){
+  S = 1 - pnorm((log(t)-mu)/sd)
+  f = exp(-(((log(t)-mu)^2)/(2*sd^2)))/ (sqrt(2*pi)*t*sd)
+  h = f/S
+  return(h)
+}
+```
+
+```{r hlognorm_plot}
+curve(hlognorm(x,4,2), from=0, to=20, 
+    main = bquote("Log-Normal Distribution with parameters with" ~ mu == 4 ~ "," ~ sigma == 2),
+    ylab = 'Hazard', 
+    xlab = 't',
+    lwd = 2, 
+    col = 'steelblue') 
+```
+
+2) For Gamma distribution $Gamma(\alpha,\beta)$, in this case, I choose $\alpha = 2,\beta = 0.5$
+
+For Gamma distribution, there is no close form of the survival function, the density function of a Gamma distribution is,
+$$f(t) = \frac{\beta^\alpha}{\Gamma(\alpha)}t^{\alpha - 1}e^{-}\beta$$
+Here, I create a function for the hazard function of Gamma distribution, and plot the hazard function with my parameters.
+
+```{r gamma_hazard}
+hgamma <- function(t, alpha = 0, beta = 0.5){
+  f = dgamma(t, alpha, beta)
+  S = 1 - pgamma(t, alpha, beta)
+  h = f/S
+  return(h)
+}
+```
+
+```{r gamma_plot}
+curve(hgamma(x,2,0.5), from=0, to=20, 
+    main = bquote("Gamma Distribution with parameters with" ~ alpha == 2 ~ "," ~ beta == 0.5), 
+    ylab = 'Hazard', 
+    xlab = 't',
+    lwd = 2, 
+    col = 'steelblue') 
+```
+
+## Appendix: Code for this report
+
+```{r ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE}
+```

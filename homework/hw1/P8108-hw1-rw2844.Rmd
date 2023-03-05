@@ -1,0 +1,186 @@
+---
+title: "P8108 Homework 1"
+author: "Ryan Wei, rw2844"
+date: "2022-09-18"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Problem 1
+
+Identify a real survival data set from literature or `R` packages such `survival`,`Biostat3`.
+
+I choose the `pbc` dataset from the `survival` package in `R`. Here is the first 6 rows of this dataset.    
+
+```{r}
+head(survival::pbc)
+```
+
+### Background of the dataset
+
+#### About the disease
+
+Primary sclerosing cholangitis is an autoimmune disease leading to destruction of the small bile ducts in the liver. Progression is slow but inexhortable, eventually leading to cirrhosis and liver decompensation. The condition has been recognised since at least 1851 and was named "primary biliary cirrhosis" in 1949. Because cirrhosis is a feature only of advanced disease, a change of its name to "primary biliary cholangitis" was proposed by patient advocacy groups in 2014.
+
+#### About the study
+
+This data is from the Mayo Clinic trial in PBC conducted between **January 1974 and May 1984**. A total of 424 PBC patients, referred to Mayo Clinic during that ten-year interval, met eligibility criteria for the **randomized placebo controlled trial** of the drug D-penicillamine(DPCA). The first 312 cases in the data set participated in the randomized trial and contain largely complete data. The additional 112 cases did not participate in the clinical trial, but consented to have basic measurements recorded and to be followed for survival. Six of those cases were lost to follow-up shortly after diagnosis, so the data here are on an additional 106 cases as well as the 312 randomized participants. 
+
+### Type of Censoring
+
+In this study, time zero is date of diagnosis and initiation of treatment. Study participants(a total of n=312 consenting subjects) were followed to event of end-stage liver disease or censoring. Thus, these are an example of **right censored** data.
+
+### Summary of the data
+
+#### Number of subjects
+
+As mentioned before, a total of `n=312` consenting subjects were enrolled and randomized to either active
+treatment or placebo-control (presumably this group received standard care)   
+
+#### Number of events
+
+Over the approximate 10 years of follow-up, 125 events of death (40%) were observed.
+
+#### Number of censoring
+
+```{r censor-count}
+ncensor = sum(subset(survival::pbc, !is.na(trt))$status == 0)
+```
+
+The number of censoring amount the 312 subjects is `r ncensor`.
+
+Here is a descriptive statistical analysis for this dataset.
+
+```{r table-1-pbc,warning=FALSE, message=FALSE}
+require(table1)
+
+dat <- subset(survival::pbc, !is.na(trt)) 
+# nrow(dat)
+
+dat$trt     <- factor(dat$trt, levels=1:2, labels=c("D-penicillamine", "Placebo"))
+dat$sex     <- factor(dat$sex, levels=c("m", "f"), labels=c("Male", "Female"))
+dat$stage   <- factor(dat$stage, levels=1:4, labels=paste("Stage", 1:4))
+dat$edema   <- factor(dat$edema, levels=c(0, 0.5, 1),
+                      labels=c("No edema",
+                               "Untreated or successfully treated",
+                               "Edema despite diuretic therapy"))
+dat$spiders <- as.logical(dat$spiders)
+dat$hepato  <- as.logical(dat$hepato)
+dat$ascites <- as.logical(dat$ascites)
+
+label(dat$age)      <- "Age (y)"
+label(dat$sex)      <- "Sex"
+label(dat$stage)    <- "Histologic stage of disease"
+label(dat$edema)    <- "Edema status"
+label(dat$spiders)  <- "Blood vessel malformations in the skin"
+label(dat$hepato)   <- "Presence of hepatomegaly or enlarged liver"
+label(dat$ascites)  <- "Presence of ascites"
+label(dat$platelet) <- "Platelet count ($\\times$; 10<sup>9</sup> per liter)"
+label(dat$protime)  <- "Standardised blood clotting time"
+label(dat$albumin)  <- "Serum albumin (g/dL)"
+label(dat$alk.phos) <- "Alkaline phosphotase (U/L)"
+label(dat$ast)      <- "Aspartate aminotransferase (U/mL)"
+label(dat$bili)     <- "Serum bilirubin (mg/dL)"
+label(dat$chol)     <- "Serum cholesterol (mg/dL)"
+label(dat$copper)   <- "Urine copper ($\\mu$;g/day)"
+label(dat$trig)     <- "Triglycerides (mg/dL)"
+
+table1(~ age + sex + stage + edema + spiders + hepato + ascites +
+         platelet + protime + albumin + alk.phos + ast + bili + chol +
+         copper + trig | trt, data=dat)
+```
+
+## Problem 2
+
+For this part, I am going to reference the SURVIVE randomized trial.
+
+### Summary of the SURVIVE Trial
+
+The Survival of Patients With Acute Heart Failure in Need of Intravenous Inotropic Support (SURVIVE) study was a randomized, doubleblind trial comparing the efficacy and safety of intravenous levosimendan or dobutamine in 1327 patients hospitalized with acute decompensated heart failure who required inotropic support. The trial was conducted at 75 centers in 9 countries and patients were randomized between March 2003 and December 2004.
+
+### Study Design
+
+- Patients:
+
+  - Inclusion criteria:
+    
+    - Age $\ge$ 18
+    
+    - provided written informed consent and were hospitalized with ADHF
+    
+    - ejection fraction of 30% or less within the previous 12 months and required intravenous inotropic support
+    
+    -  at least 1 of the following at screening: 
+    
+      1. dyspnea at rest or mechanical ventilation for ADHF; 
+      
+      2. oliguria not as a result of hypovolemia; or 
+      
+      3. pulmonary capillary wedge pressure of 18 mm/Hg or higher and/or cardiac index of 2.2 L/min per m2 or less.
+  
+  - Exclusion criteria: severe ventricular outflow obstruction; systolic blood pressure persistently lower than 85 mm/Hg or heart rate persistently at 130/min or higher; intravenous inotrope use during the index hospitalization (except dopamine 2 µg/kg per minute or digitalis); history of torsade de pointes; and serum creatinine level higher than 5.1 mg/dL (450 µmol/L) or dialysis.
+  
+  
+- Study Plan:
+
+  - Randomized, doubleblind, multicenter, parallel-group study
+    
+    - Step 1: vials containing study drug were assigned a number using randomly permuted blocks
+    
+    - Step 2: patients were randomized centrally, using an interactive voice response system, to receive levosimendan or dobutamine at a ratio of 1:1
+    
+  - Measurement: Plasma B-type natriuretic peptide (BNP) levels were measured after 1, 3, and 5 days. Hospitalization or death was noted for the 180-day period.
+  
+- Study end points:
+
+  - Primary end point: all-cause mortality during the 180 days following randomization
+  
+  - Secondary end points: 
+  
+    - all-cause mortality during 31 days 
+    
+    - change in BNP level from baseline to 24 hours 
+    
+    - number of days alive and out of the hospital during the 180 days
+    
+    - change in patientassessed dyspnea at 24 hours, patientassessed global assessment at 24 hours
+    
+    - cardiovascular mortality through 180 days
+
+### Analysis Method
+
+- Survival curves: Cumulative survival curves were constructed as time-to-event plots by Kaplan-Meier methods and differences were tested for significance by the Cox proportional hazard regression model, with treatment as the only covariate.
+
+- Cox model: used to examine potential treatment $\times$ subgroup interactions using treatment, subgroup, and treatment $\times$ subgroup interaction as covariates
+
+- Comparison of categorical variables: performed using the Cochran-MantelHaenszel test with effect for treatment only
+
+- Changes in BNP levels:  Kruskal-Wallis test
+
+- Comparisons between treatment groups for the incidence rates of adverse events: Fisher exact test
+
+- Mean change from baseline of other variables: analysis of covariance with baseline as a covariate
+
+- Treatment differences in mean change from baseline in electrocardiogram and vital signs were tested by analysis of covariance with baseline as a covariate
+
+### Study Result
+
+- All-cause mortality at 180 days occurred in 173 (26%) patients in the levosimendan group and 185 (28%) patients in the dobutamine group (hazard ratio, 0.91; 95% confidence interval, 0.74-1.13; P=.40). 
+
+- The levosimendan group had greater decreases in B-type natriuretic peptide level at 24 hours that persisted through 5 days compared with the dobutamine group (P=.001 for all time points). 
+
+- There were no statistical differences between treatment groups for the other secondary end points. 
+
+- There was a higher incidence of cardiac failure in the dobutamine group. There were higher incidences of atrial fibrillation, hypokalemia, and headache in the levosimendan group.
+
+## Citation
+
+1. Mebazaa A, Nieminen MS, Packer M, et al. Levosimendan vs Dobutamine for Patients With Acute Decompensated Heart Failure: The SURVIVE Randomized Trial. JAMA. 2007;297(17):1883–1891. doi:10.1001/jama.297.17.1883
+
+## Appendix: Code for this report
+
+```{r ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE}
+```
